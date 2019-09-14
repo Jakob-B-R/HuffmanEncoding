@@ -1,3 +1,5 @@
+from collections import deque
+import pickle
 class CharacterNode:
 
     def __init__(self,  weight, value = None, child_left = None, child_right = None):
@@ -19,11 +21,55 @@ def sort_array(array):
         character_count[index] = temp
     return character_count
     
+def find_element(root, elem):
+    stack = deque()
+    stack.append(root)
+    while(stack):
+        element = stack.pop()
+        if(element.value is None):
+            stack.append(element.child_left)
+            stack.append(element.child_right)
+        elif(element.value == elem):
+            return element
+    print("DNE")
+    return "DNE"
 
-a = CharacterNode(1, 'a')
-b = CharacterNode(2, 'b')
-c = CharacterNode(3, None, a, b)
+def Create_Dict(root, code, dict):
+    if(root.value is None):
+        Create_Dict(root.child_left, code + "0", dict)
+        Create_Dict(root.child_right, code + "1", dict)
+    else:
+        dict[root.value] = code
+    return dict   
 
+def Write_To_File(rawFile, encodedFile, charDict):
+    with open(encodedFile, "w") as outfile:
+        outfile.write("")
+    with open(rawFile) as infile:
+        encodedLine = ""
+        for line in infile:
+            #print(line)
+            for letter in line:
+                code = charDict[letter]
+                for oneorzero in code:
+                    encodedLine += oneorzero
+                    if(len(encodedLine) == 8):
+                        binary = int(encodedLine, 2)
+                        #print(binary)
+                        with open(encodedFile, "ab") as outfile:
+                            s = chr(binary).encode("UTF-8")
+                            try:
+                                outfile.write(bytes(s))
+                            except:
+                                #print(binary,chr(binary))
+                                outfile.write(s)
+                        encodedLine = ""
+        while(len(encodedLine) != 8 and len(encodedLine) != 0):
+            encodedLine+="0"
+        binary = int(encodedLine, 2)
+        s = chr(binary).encode("UTF-8")
+        with open(encodedFile, "ab") as outfile:
+            outfile.write(bytes(s))
 ##Go through the file in an efficient way and create a Node for each one, and
 #Get the frequency of every character. Only ASCII values supported, if they do not appear, they are a None in the array.
 character_count = [None] * 127
@@ -53,7 +99,9 @@ for element in character_count[:]:
     else:
         print(element.value, element.weight)
 
+##build the Huffman Tree
 while(len(character_count) > 1):
+
     parent = CharacterNode(character_count[0].weight + character_count[1].weight, None, character_count[0], character_count[1])
     
     character_count.remove(character_count[0])
@@ -62,7 +110,14 @@ while(len(character_count) > 1):
     character_count.append(parent)
     character_count = sort_array(character_count)
 
-print("Done?")
+root = character_count[0]
+Node = find_element(root, 'b')
+print(Node.value)
 
+##build dictionary
+charDict = dict()
+charDict = Create_Dict(root, "", charDict)
 
-##build the Huffman Tree
+##Writes and encodes the file
+Write_To_File("TextFile1.txt", "EncodedData.bnr", charDict)
+
